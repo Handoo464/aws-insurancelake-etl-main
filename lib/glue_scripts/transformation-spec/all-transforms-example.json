@@ -1,0 +1,338 @@
+{
+	"input_spec": {
+
+		"table_description": "description will only apply to cleanse bucket",
+
+		"allow_schema_change": "permissive",
+
+		"strict_schema_mapping": true,
+
+		"csv": {
+			"header": true
+		},
+
+		"tsv": {
+			"header": true
+		},
+
+        "json": {
+            "multiline": true
+        },
+
+		"fixed": {},
+
+		"parquet": {},
+
+		"excel": {
+			"sheet_names": [ "Sheet1" ],
+			"data_address": "A2",
+			"header": true,
+			"password": ""
+		}
+
+	},
+
+	"transform_spec": {
+
+		"filename": [
+			{
+				"field": "valuationdate",
+				"pattern": "\\S+-(\\d{8})\\.csv",
+				"required": true
+			},
+			{
+				"field": "program",
+				"pattern": "([A-Za-z0-9]+)\\S+\\.csv",
+				"required": true
+			}
+		],
+
+		"columnfromcolumn": [
+			{
+				"field": "username",
+				"source": "emailaddress",
+				"pattern": "(\\S+)@\\S+"
+
+			},
+			{
+				"field": "policyyear",
+				"source": "policyeffectivedate",
+				"pattern": "(\\d\\d\\d\\d)/\\d\\d/\\d\\d"
+			}
+		],
+
+		"columnreplace": [
+			{
+				"field": "clean_date_field",
+				"source": "bad_date_field",
+				"pattern": "0000-00-00",
+				"replacement": ""
+			},
+			{
+				"field": "field_with_extra_data",
+				"pattern": "[a-zA-z]{3,5}",
+				"replacement": ""
+			}
+		],
+
+		"date": [
+		   	{
+				"field": "StartDate",
+				"format": "M/d/yy"
+			},
+			{
+				"field": "EndDate",
+				"format": "yy-MM-dd"
+			},
+			{
+				"field": "valuationdate",
+				"source": "valuationdatestring",
+				"format": "yyyyMMdd"
+			}
+		],
+
+		"date:2": [
+			{
+				"field": "EffectiveDate",
+				"format": "yyyy-MM-dd"
+			},
+			{
+				"field": "ExpirationDate",
+				"format": "yyyy-MM-dd"
+			}
+		],
+
+		"timestamp": [
+			{
+				"field": "GenerationDate",
+				"format": "yyyy-MM-dd HH:mm:ss.SSS+0000"
+			},
+			{
+				"field": "DataLoadTimestamp",
+				"source": "DataLoadString",
+				"format": "yyyy-MM-dd HH:mm:ss.SSSZ"
+			}
+		],
+
+		"changetype": {
+			"ExpiringPremiumAmount": "decimal(10,2)",
+			"WrittenPremiumAmount": "decimal(10,2)",
+			"EarnedPremium": "decimal(10,2)",
+			"PrimaryKeyId": "bigint",
+			"GrowingCount": "bigint",
+			"PolicyKey": "string",
+			"notes_struct": "json",
+            "policyaddress": "struct<addressline1:string,addressline2:string,city:string,country:string,county:string,displayname:string,id:string,policyaddress:boolean,postalcode:string,state:struct<code:string,name:string>>"
+		},
+
+		"implieddecimal": [
+			{
+				"field": "indemnity_paid_current_period",
+				"num_implied": "4",
+				"format": "16,4"
+			},
+			{
+				"field": "claim_amount",
+				"source": "claim_amount_string",
+				"format": "16,2"
+			}
+		],
+
+		"currency": [
+			{
+				"field": "SmallDollars",
+				"format": "6,2"
+			},
+			{
+				"field": "EuroValue",
+				"source": "EuroValueFormatted",
+				"euro": true
+			}
+		],
+
+		"titlecase": [
+			"CompanyName",
+			"AddressStreet"
+		],
+
+		"redact": {
+			"CustomerNo": "****"
+		},
+
+		"hash": [
+			"InsuredContactCellPhone",
+			"InsuredContactEmail"
+		],
+
+		"tokenize": [
+		    "EIN"
+		],
+
+		"lookup": [
+			{
+				"field": "smokingclass",
+				"lookup": "smokingclass"
+			},
+			{
+				"field": "issuestatename",
+				"source": "issuestate",
+				"lookup": "StateCd",
+				"nomatch": "N/A"
+			}
+		],
+
+		"multilookup": [
+			{
+				"lookup_group": "LOBCoverage",
+				"match_columns": [
+					"program",
+					"coverage"
+				],
+				"return_attributes": [
+					"coveragenormalized",
+					"lob"
+				],
+				"nomatch": "N/A"
+			}
+		],
+
+		"merge": [
+			{
+				"field": "insuredstatemerge",
+				"source_list": [
+					"insuredstatename", "insuredstatecode"
+				],
+				"default": "Unknown",
+				"empty_string_is_null": false
+			}
+		],
+
+		"filldown": [
+			{
+				"field": "category"
+			},
+			{
+				"field": "subcategory",
+				"sort": [ "timestamp" ]
+			}
+		],
+
+		"rownumber": [
+			{
+				"field": "row_number"
+			},
+			{
+				"field": "policy_month_index",
+				"partition": [ "policynumber" ],
+				"sort": [ "start_date" ]
+			}
+		],
+
+		"literal": {
+			"source": "syntheticdata",
+			"line_of_business": "synthetic"
+		},
+
+		"addcolumns": [
+			{
+				"field": "TotalWrittenPremium",
+				"source_columns": [ "WrittenPremiumAmount" ]
+			}
+		],
+
+		"multiplycolumns": [
+			{
+				"field": "SplitPremium",
+				"source_columns": [ "WrittenPremiumAmount", "SplitPercent1", "SplitPercent2" ],
+				"empty_value": 0
+			}
+		],
+
+		"flipsign": [
+			{
+				"field": "Balance"
+			},
+			{
+				"field": "NewAccountBalance",
+				"source": "AccountBalance"
+			}
+		],
+
+		"enddate": [
+			{
+				"field": "CalcExpirationDate",
+				"start_date": "EffectiveDate",
+				"num_months": "Term"
+			}
+		],
+
+		"policymonths": [
+			{
+				"field": "CalcNumMonths",
+				"policy_effective_date": "EffectiveDate",
+				"policy_expiration_date": "ExpirationDate",
+				"normalized": true
+			}
+		],
+
+		"expandpolicymonths": {
+			"policy_effective_date": "EffectiveDate",
+			"policy_expiration_date": "ExpirationDate",
+			"uniqueid": "generated_policy_number",
+			"policy_month_start_field": "StartDate",
+			"policy_month_end_field": "EndDate",
+			"policy_month_index": "PolicyMonthIndex"
+		},
+
+		"earnedpremium": [
+			{
+				"field": "CalcEarnedPremium",
+				"written_premium_list": [
+					"WrittenPremiumAmount"
+				],
+				"policy_effective_date": "EffectiveDate",
+				"policy_expiration_date": "ExpirationDate",
+				"period_start_date": "StartDate",
+				"period_end_date": "EndDate",
+				"byday": true
+			}
+		],
+
+		"combinecolumns": [
+			{
+				"field": "RowKey",
+				"format": "{}-{}-{}",
+				"source_columns": [ "LOBCode", "PolicyNumber", "StartDate" ]
+			}
+		],
+
+		"filterrows": [
+			{
+				"description": "Claim number or file number is required",
+				"condition": "claim_number is not null or file_number is not null"
+			},
+			{
+				"description": "Period start dates are valid dates",
+				"condition": "`startdate` >= cast('1970-01-01' as date)"
+			}
+		],
+
+        "jsonexpandmap": [
+            {
+                "field": "activities",
+                "index_field": "activity_index",
+                "key_field": "activity_id"
+
+            }
+        ],
+
+        "jsonexpandarray": [
+            {
+                "field": "policyaddress",
+                "source": "policyaddresses",
+                "index_field": "policyaddress_index"
+            }
+        ]
+
+	}
+}

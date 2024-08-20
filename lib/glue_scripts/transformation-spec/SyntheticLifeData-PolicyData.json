@@ -1,0 +1,84 @@
+{
+	"input_spec": {
+		"table_description": "Synthetic Life Insurance Policy Data"
+	},
+
+	"transform_spec": {
+		"columnfromcolumn": [
+			{
+				"field": "username",
+				"source": "emailid",
+				"pattern": "(\\S+)@\\S+"
+			},
+			{
+				"field": "policyyear",
+				"source": "policyeffectivedate",
+				"pattern": "(\\d\\d\\d\\d)/\\d\\d/\\d\\d"
+			},
+			{
+				"field": "producer",
+				"pattern": "P(\\d+)"
+			}
+		],
+
+		"date": [
+			{
+				"field": "policyquotationdate",
+				"format": "yyyy-MM-dd"
+			},
+			{
+				"field": "policyeffectivedate",
+				"format": "yyyy/M/d"
+			},
+			{
+				"field": "customerdob",
+				"format": "yyyy/M/d"
+			}
+		],
+
+		"timestamp": [
+			{
+				"field": "lastupdated",
+				"format": "d/M/yyyy H:m:s"
+			}
+		],
+
+		"redact": {
+			"customerno": "****"
+		},
+
+		"hash": [
+			"phoneno",
+            "emailid"
+		],
+
+		"tokenize": [
+			"personalid"
+		],
+
+		"changetype": {
+			"monthlypremium": "decimal(10,2)",
+			"producercommision": "decimal(10,2)",
+			"premiumpaidtilldate": "decimal(10,2)",
+			"commisionpaidtilldate": "decimal(10,2)",
+			"producer": "int"
+		},
+
+		"lookup": [
+			{
+				"field": "smokingclass",
+				"lookup": "smokingclass"
+			},
+			{
+				"field": "issuestatename",
+				"source": "issuestate",
+				"lookup": "StateCd",
+				"nomatch": "N/A"
+			}
+		],
+
+		"literal": {
+			"source": "syntheticdata"
+		}
+	}
+}

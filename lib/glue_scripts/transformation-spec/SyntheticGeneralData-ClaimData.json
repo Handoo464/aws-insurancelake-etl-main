@@ -1,0 +1,11 @@
+{
+	"input_spec": {
+		"table_description": "Synthetic General Insurance Claim Data"
+	},
+
+	"transform_spec": {
+		"changetype": {
+			"AccidentYearTotalIncurredAmount": "decimal(10,2)"
+		}
+	}
+}
